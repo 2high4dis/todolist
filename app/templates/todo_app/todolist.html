@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="content">
+    <aside>
+        <h4>Lists: </h4>
+        <ul>
+            {% for todolist in todolists_list %}
+            <li><a href="{% url 'list_view' todolist.id %}">{{ todolist.list_name }}</a></li>
+            {% endfor %}
+        </ul>
+    </aside>
+    <main>
+        <h4>{{ todolist.list_name }}</h4>
+        {% csrf_token %}
+        {% load mptt_tags %}
+        {% full_tree_for_model todo_app.ListItem as items %}
+        {% for item,structure in items|tree_info %}
+        {% if structure.new_level %}<ul>
+            <li class="list_item">{% else %}
+            </li>
+            <li class="list_item">{% endif %}
+                {{ list_item.item_text }}
+                {% for level in structure.closed_levels %}</li>
+        </ul>{% endfor %}
+        {% endfor %}
+        <p class="list_item"><a href="#" class="additem"><b>+ Add Item</b></a></p>
+        <button class="btn-submit" type="submit">Save Changes</button>
+    </main>
+</div>
+{% endblock %}

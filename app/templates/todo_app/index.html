@@ -6,11 +6,19 @@
     {% if todolists_list %}
     <ul>
         {% for todolist in todolists_list %}
-        <li><a href="{% url 'list_view' todolist.id %}">{{ todolist.list_name }}</a></li>
+        <li><a href="{% url 'list_view' todolist.id %}"
+                class="link-dark link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover"><b>{% if todolist.list_name %}{{ todolist.list_name }}{% else %}Unnamed
+                    List{% endif %}. {% if todolist.finished %}Finished in {{ todolist.finished.days }}
+                    day{% if todolist.finished.days != 1 %}s{% endif %}{% else %}Not
+                    finished
+                    yet{% endif %}.</b>
+            </a>
+        </li>
         {% endfor %}
     </ul>
     {% else %}
-    <p>No lists are available.</p>
+    <p><b>No lists are available.</b></p>
     {% endif %}
+    <a href="{% url 'create_list' %}" class="btn btn-success w-100">Create New</a>
 </div>
 {% endblock %}

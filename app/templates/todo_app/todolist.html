@@ -1,31 +1,177 @@
 {% extends 'base.html' %}
+{% load mptt_tags %}
 
 {% block content %}
-<div class="content">
-    <aside>
+
+<div class="row" style="min-height: 50rem;">
+    <aside class="col-3 p-3">
         <h4>Lists: </h4>
         <ul>
             {% for todolist in todolists_list %}
-            <li><a href="{% url 'list_view' todolist.id %}">{{ todolist.list_name }}</a></li>
+            <li><a href="{% url 'list_view' todolist.id %}"
+                    class="link-dark link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover"><b>{% if todolist.list_name %}{{ todolist.list_name }}{% else %}Unnamed
+                        List{% endif %}. {% if todolist.finished %}Finished in {{ todolist.finished.days }}
+                        day{% if todolist.finished.days != 1 %}s{% endif %}{% else %}Not
+                        finished
+                        yet{% endif %}.</b></a>
+            </li>
             {% endfor %}
         </ul>
     </aside>
-    <main>
-        <h4>{{ todolist.list_name }}</h4>
-        {% csrf_token %}
-        {% load mptt_tags %}
-        {% full_tree_for_model todo_app.ListItem as items %}
-        {% for item,structure in items|tree_info %}
-        {% if structure.new_level %}<ul>
-            <li class="list_item">{% else %}
+    <main class="col-sm-9 p-3">
+        <div class="row">
+            <div class="col text-start">
+                {% if change_name %}
+                <form action="{% url 'change_name' todolist.id %}" method="post">
+                    {% csrf_token %}
+                    <div class="row g-3 align-items-center">
+                        <div class="col-auto">
+                            <input type="text" name="todolist_name" id="todolist_name" value="{{ todolist.list_name }}"
+                                class="form-control" required>
+                        </div>
+                        <div class="col-auto">
+                            <button class="btn btn btn-dark" type="submit">Save</button>
+                        </div>
+                    </div>
+                </form>
+                {% else %}
+                <h4>
+                    {% if todolist.list_name %}{{ todolist.list_name }}{% else %}Unnamed List{% endif %}
+                    <a href="{% url 'change_name' todolist.id %}" class="btn btn-sm btn-outline-dark mx-2 align-top"
+                        data-bs-toggle="tooltip" data-bs-placement="right" data-bs-title="Change list name">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
+                            class="bi bi-pencil-square" viewBox="0 0 16 16">
+                            <path
+                                d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z" />
+                            <path fill-rule="evenodd"
+                                d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5v11z" />
+                        </svg>
+                    </a>
+                </h4>
+                {% endif %}
+            </div>
+            <div class="col text-end mx-2">
+                <a href="{% url 'delete_list' todolist.id %}" class="btn btn-sm btn-danger" data-bs-toggle="tooltip"
+                    data-bs-placement="left" data-bs-title="Delete list">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor"
+                        class="bi bi-trash-fill" viewBox="0 0 16 16">
+                        <path
+                            d="M2.5 1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1H3v9a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V4h.5a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1H2.5zm3 4a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5zM8 5a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7A.5.5 0 0 1 8 5zm3 .5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 1 0z" />
+                    </svg>
+                </a>
+            </div>
+        </div>
+
+        {% for list_item,structure in items|tree_info %}
+        {% if structure.new_level %}
+        <ul class="list-group list-group-flush todolist-list border-top">
+            <li class="list-group-item todolist-list">
+                {% else %}
             </li>
-            <li class="list_item">{% endif %}
-                {{ list_item.item_text }}
-                {% for level in structure.closed_levels %}</li>
-        </ul>{% endfor %}
+            <li class="list-group-item todolist-list">
+                {% endif %}
+                <div class="row">
+                    <div class="col text-start">
+                        <a href="{% url 'change_status' todolist.id list_item.id %}"
+                            class="btn btn-sm btn-{% if list_item.completed %}success{% else %}danger{% endif %}"
+                            data-bs-toggle="tooltip" data-bs-placement="top"
+                            data-bs-title="Set {% if list_item.completed %}not {% endif %}completed">
+                            {% if list_item.completed %}
+                            ✓
+                            {% else %}
+                            𐄂
+                            {% endif %}
+                        </a>
+                        {% if update_item == list_item.id %}
+                        <form action="{% url 'update_item' todolist.id list_item.id %}" method="post"
+                            class="inline-form">
+                            {% csrf_token %}
+                            <span>
+                                <input type="text" name="item_text" id="item_text" class="inline-input" required
+                                    value="{{ list_item.item_text }}">
+                            </span>
+                            <button class="btn btn btn-dark" type="submit">Save</button>
+                        </form>
+                        {% else %}
+                        {{ list_item.item_text }}
+                        {% endif %}
+                    </div>
+                    <div class="col text-end">
+                        {% if not add_sub == list_item.id %}
+                        <a href="{% url 'add_sub' todolist.id list_item.id %}" class="btn btn-sm btn-success"
+                            data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Add subitem"><b>+</b></a>
+                        {% endif %}
+                        {% if not update_item == list_item.id %}
+                        <a href="{% url 'update_item' todolist.id list_item.id %}" class="btn btn-sm btn-primary"
+                            data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Update text">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                class="bi bi-pencil-square" viewBox="0 0 16 16">
+                                <path
+                                    d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z" />
+                                <path fill-rule="evenodd"
+                                    d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5v11z" />
+                            </svg>
+                        </a>
+                        {% endif %}
+                        <a href="{% url 'delete_item' todolist.id list_item.id %}"
+                            class="btn btn-sm btn-outline-danger">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                class="bi bi-trash-fill" viewBox="0 0 16 16">
+                                <path
+                                    d="M2.5 1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1H3v9a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V4h.5a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1H2.5zm3 4a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5zM8 5a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7A.5.5 0 0 1 8 5zm3 .5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 1 0z" />
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+                {% if add_sub == list_item.id %}
+                <ul class="list-group list-group-flush todolist-list">
+                    <li class="list-group-item todolist-list">
+                        <form action="{% url 'add_sub' todolist.id list_item.id %}" method="post">
+                            {% csrf_token %}
+                            <div class="row g-3 align-items-center">
+                                <div class="col-auto">
+                                    <input type="text" name="item_text" id="item_text" class="form-control" required>
+                                </div>
+                                <div class="col-auto">
+                                    <button class="btn btn btn-dark" type="submit">Add</button>
+                                </div>
+                            </div>
+                        </form>
+                    </li>
+                </ul>
+                {% endif %}
+                {% for level in structure.closed_levels %}
+            </li>
+        </ul>
         {% endfor %}
-        <p class="list_item"><a href="#" class="additem"><b>+ Add Item</b></a></p>
-        <button class="btn-submit" type="submit">Save Changes</button>
+        {% endfor %}
+
+        <ul class="list-group list-group-flush todolist-list">
+            <li class="list-group-item todolist-list">
+                {% if add_item %}
+                <form action="{% url 'add_item' todolist.id %}" method="post">
+                    {% csrf_token %}
+                    <div class="row g-3 align-items-center">
+                        <div class="col-auto">
+                            <input type="text" name="item_text" id="item_text" class="form-control" required>
+                        </div>
+                        <div class="col-auto">
+                            <button class="btn btn-dark" type="submit">Add</button>
+                        </div>
+                    </div>
+                </form>
+                {% else %}
+                <a href="{% url 'add_item' todolist.id %}" class="btn btn-dark" data-bs-toggle="tooltip"
+                    data-bs-placement="bottom" data-bs-title="Add item">Add</a>
+                {% endif %}
+            </li>
+        </ul>
     </main>
 </div>
+
+<script>
+    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+    const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
+</script>
+
 {% endblock %}

@@ -2,6 +2,7 @@
 
 {% block content %}
 <div class="container">
+    {% if user.is_authenticated %}
     <h4>Lists: </h4>
     {% if todolists_list %}
     <ul>
@@ -20,5 +21,11 @@
     <p><b>No lists are available.</b></p>
     {% endif %}
     <a href="{% url 'create_list' %}" class="btn btn-success w-100">Create New</a>
+    {% else %}
+    <div class="text-center">
+        <h5>Hello, you are on To-do list site!<br>Login or register to get started!</h5>
+        <a href="{% url 'login' %}" class="btn btn-dark">Get started</a>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}
